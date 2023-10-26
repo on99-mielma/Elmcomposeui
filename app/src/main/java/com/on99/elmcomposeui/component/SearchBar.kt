@@ -137,6 +137,9 @@ fun SearchBar1(
                 onClick = {
                     Log.e("IconButton::onClick", "Need to turn to CAREMA")
                     stateViewModel.switchCameraScreenTrue()
+
+                    stateViewModel.switchCameraScreen()
+//                    stateViewModel.switchCameraScreen()
                 },
                 enabled = isLeftButtonOpen
             ) {

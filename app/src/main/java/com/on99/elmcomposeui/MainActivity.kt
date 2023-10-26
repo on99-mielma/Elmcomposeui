@@ -41,6 +41,8 @@ class MainActivity : ComponentActivity() {
                 val shopsViewModel: ShopsViewModel =
                     viewModel(factory = ShopsViewModel.Factory)
                 val detailUiState = shopsViewModel.detailUiState.collectAsState().value
+//                var check = detailUiState.isCameraScreen
+                val outsideUiState = shopsViewModel.outsideUiState.collectAsState().value
                 val navController = rememberNavController()
                 val multiplePermissionsState = rememberMultiplePermissionsState(
                     listOf(
@@ -49,7 +51,7 @@ class MainActivity : ComponentActivity() {
                     )
                 )
                 AnimatedVisibility(
-                    visible = detailUiState.isCameraScreen,
+                    visible = outsideUiState.isCameraScreen,
                     enter = fadeIn(),
                     exit = fadeOut(),
                     modifier = Modifier
@@ -126,6 +128,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
 }
 
 @Composable

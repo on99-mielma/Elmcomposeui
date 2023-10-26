@@ -22,6 +22,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.on99.elmcomposeui.ShopDetailsApplication
 import com.on99.elmcomposeui.component.cameraComponent.CameraSettingState
 import com.on99.elmcomposeui.component.componentdetail.ComponentDetailUiState
+import com.on99.elmcomposeui.component.componentdetail.OutsideUiState
 import com.on99.elmcomposeui.data.ShopDetailsRepository
 import com.on99.elmcomposeui.model.ShopDetails
 import com.on99.elmcomposeui.model.TextBoard
@@ -30,9 +31,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.tensorflow.lite.task.vision.detector.Detection
 import retrofit2.HttpException
 import java.io.IOException
 import java.net.SocketTimeoutException
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 
 sealed interface ShopUiState {
@@ -64,6 +68,13 @@ class ShopsViewModel(private val shopDetailsRepository: ShopDetailsRepository) :
      * 所有具体的控制细节
      */
     val detailUiState: StateFlow<ComponentDetailUiState> = _detailUiState
+
+    /**
+     * tensor yong
+     */
+    private val _outsideUiState = MutableStateFlow(OutsideUiState())
+    val outsideUiState: StateFlow<OutsideUiState> = _outsideUiState
+
 
 
     /**
@@ -265,6 +276,71 @@ class ShopsViewModel(private val shopDetailsRepository: ShopDetailsRepository) :
             Log.e("Exception", e.toString())
         }
     }
+
+
+    fun setTempText(str: String) {
+        _outsideUiState.update {
+            it.copy(
+                tempText = str
+            )
+        }
+    }
+    fun switchCameraScreen() {
+
+        if (!_outsideUiState.value.isCameraScreen) {
+            cameraExecutor = Executors.newSingleThreadExecutor()
+        } else {
+            cameraExecutor.shutdown()
+        }
+
+        _outsideUiState.update {
+            it.copy(
+                isCameraScreen = !_outsideUiState.value.isCameraScreen
+            )
+        }
+    }
+
+    fun setResults(
+        detectionResults: MutableList<Detection>,
+        inferenceTime: Long,
+        imageHeight: Int,
+        imageWidth: Int,
+    ) {
+        _outsideUiState.update {
+            it.copy(
+                results = detectionResults,
+                inferenceTime = inferenceTime,
+                imageHeight = imageHeight,
+                imageWidth = imageWidth
+            )
+        }
+    }
+
+    fun switchCanvasShow() {
+        _outsideUiState.update {
+            it.copy(
+                allowCanvasShow = !_outsideUiState.value.allowCanvasShow
+            )
+        }
+    }
+
+    fun switchChaosPaint() {
+        Log.d(
+            "OutsideViewModel",
+            "onCreate::switchChaosPaint: before is ${_outsideUiState.value.chaosForThePaint}"
+        )
+        _outsideUiState.update {
+            it.copy(
+                chaosForThePaint = !_outsideUiState.value.chaosForThePaint
+            )
+        }
+        Log.d(
+            "OutsideViewModel",
+            "onCreate::switchChaosPaint: after is ${_outsideUiState.value.chaosForThePaint}"
+        )
+    }
+    lateinit var cameraExecutor: ExecutorService
+
 
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {

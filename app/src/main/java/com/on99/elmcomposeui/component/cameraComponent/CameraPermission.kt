@@ -1,5 +1,6 @@
 package com.on99.elmcomposeui.component.cameraComponent
 
+import android.graphics.Bitmap
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
@@ -14,6 +15,9 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.PermissionState
 import com.on99.elmcomposeui.component.ShopsViewModel
+import com.on99.elmcomposeui.component.tensor.MyDetectorListener
+import com.on99.elmcomposeui.component.tensor.ObjectDetectorHelper
+import com.on99.elmcomposeui.component.tensor.OverlayNewView
 
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -24,8 +28,10 @@ fun CameraPermission(
 ) {
     BackHandler(enabled = true) {
         shopsViewModel.closeAllExtraScreen()
+        shopsViewModel.switchCameraScreen()
     }
     val cameraSettingState = shopsViewModel.cameraSettingState.collectAsState().value
+    val outsideUiState = shopsViewModel.outsideUiState.collectAsState().value
     val flashLightController = cameraSettingState.flashLightController
     val context = LocalContext.current
     val cameraConfigModel = remember {
@@ -34,15 +40,42 @@ fun CameraPermission(
         model
     }
     val preview = cameraConfigModel.preview
+    lateinit var bitmapBuffer: Bitmap
+    lateinit var objectDetectorHelper: ObjectDetectorHelper
     if (multiplePermissionsState.allPermissionsGranted) {
+
+        objectDetectorHelper = ObjectDetectorHelper(
+            context = context,
+            objectDetectorListener = MyDetectorListener(
+                context = context,
+                outsideViewModel = shopsViewModel
+            )
+        )
+
         SimpleCameraView(
             preview = preview,
             enableFlash = flashLightController,
+            imageAnalysis = cameraConfigModel.imageAnalysis.also {
+                it.setAnalyzer(shopsViewModel.cameraExecutor) { image ->
+                    bitmapBuffer = Bitmap.createBitmap(
+                        image.width,
+                        image.height,
+                        Bitmap.Config.ARGB_8888
+                    )
+                    image.use {
+                        bitmapBuffer.copyPixelsFromBuffer(image.planes[0].buffer)
+                    }
+                    val imageRotation = image.imageInfo.rotationDegrees
+                    objectDetectorHelper.detect(bitmapBuffer, imageRotation)
+                }
+            },
             flashSwitch = { shopsViewModel.switchFlashLight() },
             backHandler = {
                 shopsViewModel.closeAllExtraScreen()
+                shopsViewModel.switchCameraScreen()
             }
         )
+        OverlayNewView(results = outsideUiState.results)
     } else {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
@@ -83,9 +116,11 @@ private fun getTextShowGivenPermissions(
             revokedPermissionsSize > 1 && i == revokedPermissionsSize - 2 -> {
                 textToShow.append(", and ")
             }
+
             i == revokedPermissionsSize - 1 -> {
                 textToShow.append(" ")
             }
+
             else -> {
                 textToShow.append(", ")
             }

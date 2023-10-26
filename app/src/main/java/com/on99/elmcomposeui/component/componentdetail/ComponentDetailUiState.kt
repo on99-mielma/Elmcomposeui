@@ -3,6 +3,8 @@ package com.on99.elmcomposeui.component.componentdetail
 import com.on99.elmcomposeui.R
 import com.on99.elmcomposeui.component.navigation.Screen
 import com.on99.elmcomposeui.model.ShopDetails
+import org.tensorflow.lite.task.vision.detector.Detection
+import java.util.LinkedList
 
 data class ComponentDetailUiState(
     /**

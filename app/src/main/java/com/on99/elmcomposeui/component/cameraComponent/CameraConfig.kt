@@ -2,7 +2,6 @@ package com.on99.elmcomposeui.component.cameraComponent
 
 import android.content.Context
 import android.util.Log
-import android.util.Size
 import androidx.camera.core.*
 import kotlin.math.abs
 import kotlin.math.ln
@@ -24,7 +23,10 @@ open class CameraConfig {
 
     open fun options(builder: ImageAnalysis.Builder): ImageAnalysis {
         return builder
-            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST).build()
+            .setTargetAspectRatio(AspectRatio.RATIO_4_3)
+            .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
+            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+            .build()
     }
 
 }
